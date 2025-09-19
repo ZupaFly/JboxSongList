@@ -134,7 +134,7 @@ const changeEngSong = (song: Song) => {
       .catch(err => setError(err.message));
   }
 
-  if (loading) return <p>Завантаження...</p>;
+  if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Помилка: {error}</p>;
 
   return (
