@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChinSongList } from "./ChinSongList";
 import { EngSongList } from "./EngSongList";
 
@@ -21,7 +20,9 @@ export const SongGenerator: React.FC = () => {
   const [sets, setSets] = useState<SetSong[][]>([]);
   const [songGap, setSongGap] = useState<number>(10)
 
-  const [setLength, setSetLength] = useState<number>(20);
+  const [setLength, setSetLength] = useState<number[]>(Array(3).fill(20));
+
+  console.log(setLength);
   const [numSets, setNumSets] = useState<number>(3);
 
   const [holidays, setHolidays] = useState(false);
@@ -44,6 +45,26 @@ export const SongGenerator: React.FC = () => {
   const songsGap = songGap;
   const hostGap = 60;
   const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFta2R5YXF0aGlwZW1pbXZvb3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwODkwODksImV4cCI6MjA3MzY2NTA4OX0.KS4J9xZA-1yScHmtbjAfKfeHTa2ewqwyo6lOMUp8F_w';
+
+  useEffect(() => {
+    setSetLength(prev => {
+      const newArr = [...prev];
+      if (numSets > prev.length) {
+        return [...newArr, ...Array(numSets - prev.length).fill(20)];
+      } else {
+        // обрізаємо зайві
+        return newArr.slice(0, numSets);
+      }
+    });
+  }, [numSets]);
+
+  const handleSetLengthChange = (index: number, value: number) => {
+    setSetLength(prev => {
+      const newArr = [...prev];
+      newArr[index] = value;
+      return newArr;
+    });
+  };
 
   const selectedExtras = () => {
     const arr: string[] = [];
@@ -96,20 +117,25 @@ export const SongGenerator: React.FC = () => {
   }, []);
 
   // ===== Generate Sets =====
-  const generateSets = () => {
+  const generateSets = () => { 
     if (!eng.length || !chinese.length) return;
     const extras = selectedExtras();
     const resultSets: SetSong[][] = [];
 
-    for (let setIndex = 0; setIndex < numSets; setIndex++) {
-      let count = setLength * 60 - (host ? hostGap : 0);
+    const usedEng = new Set<string>();
+    const usedChin = new Set<string>();
 
-      const selectedEng = new Set<string>();
-      const selectedChin = new Set<string>();
+    for (let setIndex = 0; setIndex < numSets; setIndex++) {
+      let count = setLength[setIndex] * 60 - (host ? hostGap : 0);
+
       const result: SetSong[] = [];
 
-      let filteredEng = eng.filter(s => s.actuality !== "inactive" && (!s.extra || extras.includes(s.extra)));
-      let filteredChin = chinese.filter(s => s.actuality !== "inactive" && (!s.extra || extras.includes(s.extra)));
+      let filteredEng = eng.filter(
+        s => s.actuality !== "inactive" && (!s.extra || extras.includes(s.extra)) && !usedEng.has(s.name)
+      );
+      let filteredChin = chinese.filter(
+        s => s.actuality !== "inactive" && (!s.extra || extras.includes(s.extra)) && !usedChin.has(s.name)
+      );
 
       filteredEng = shuffleArray(filteredEng);
       filteredChin = shuffleArray(filteredChin);
@@ -118,20 +144,32 @@ export const SongGenerator: React.FC = () => {
         const firstArray = firstSongEng ? filteredEng : filteredChin;
         const secondArray = firstSongEng ? filteredChin : filteredEng;
 
-        const selectedFirst = firstArray.find(s => converterToSeconds(s.duration) <= count && !selectedEng.has(s.name) && !selectedChin.has(s.name));
+        const selectedFirst = firstArray.find(s => converterToSeconds(s.duration) <= count);
         if (!selectedFirst) break;
 
         result.push(selectedFirst);
         count -= converterToSeconds(selectedFirst.duration) + songsGap;
-        firstSongEng ? selectedEng.add(selectedFirst.name) : selectedChin.add(selectedFirst.name);
+
+        if (firstSongEng) {
+          usedEng.add(selectedFirst.name);
+        } else {
+          usedChin.add(selectedFirst.name);
+        }
+
         firstArray.splice(firstArray.indexOf(selectedFirst), 1);
 
-        const selectedSecond = secondArray.find(s => converterToSeconds(s.duration) <= count && !selectedEng.has(s.name) && !selectedChin.has(s.name));
+        const selectedSecond = secondArray.find(s => converterToSeconds(s.duration) <= count);
         if (!selectedSecond) break;
 
         result.push(selectedSecond);
         count -= converterToSeconds(selectedSecond.duration) + songsGap;
-        firstSongEng ? selectedChin.add(selectedSecond.name) : selectedEng.add(selectedSecond.name);
+
+        if (firstSongEng) {
+          usedChin.add(selectedSecond.name);
+        } else {
+          usedEng.add(selectedSecond.name);
+        }
+
         secondArray.splice(secondArray.indexOf(selectedSecond), 1);
       }
 
@@ -196,8 +234,8 @@ export const SongGenerator: React.FC = () => {
   console.log(chinListVisible)
 
   return (
-    <div className="p-4 font-sans space-y-4 bg-pink-200 flex gap-4">
-      <div>
+    <div className="p-4 font-sans space-y-4 bg-pink-200 flex flex-col md:flex-row gap-4">
+      <div className="flex-1">
         <div className="flex gap-4">
           <div 
             className="border rounded p-2 text-[16px] bg-amber-300 hover:bg-amber-400 box-border"
@@ -216,41 +254,48 @@ export const SongGenerator: React.FC = () => {
               Chinese songlist</div>
         </div>
     {/* Inputs for set length and num sets */}
-    <div className="flex flex-col md:flex-row gap-4">
-      <div>
-        <h2>Set Length (minutes)</h2>
-        <input
-          type="number"
-          className="border p-2 rounded w-full md:w-48"
-          min={1}
-          value={setLength}
-          onChange={e => setSetLength(Number(e.target.value))}
-          placeholder="Set length (minutes)"
-        />
-      </div>
-      
-      <div>
-        <h2>Number of sets</h2>
-        <input
-          type="number"
-          className="border p-2 rounded w-full md:w-48"
-          min={1}
-          value={numSets}
-          onChange={e => setNumSets(Number(e.target.value))}
-          placeholder="Number of sets"
-        />
-      </div>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div>
+          <h2>Number of sets</h2>
+          <input
+            type="number"
+            className="border p-2 rounded w-full md:w-48"
+            min={1}
+            value={numSets}
+            onChange={e => setNumSets(Number(e.target.value))}
+            placeholder="Number of sets"
+          />
+        </div>
 
-      <div>
-        <h2>Songs gap</h2>
-        <input
-          type="number"
-          className="border p-2 rounded w-full md:w-48"
-          min={1}
-          value={songGap}
-          onChange={e => setSongGap(Number(e.target.value))}
-          placeholder="Songs gap"
-        />
+        <div>
+          <h2>Songs gap(sec):</h2>
+          <input
+            type="number"
+            className="border p-2 rounded w-full md:w-48"
+            min={1}
+            value={songGap}
+            onChange={e => setSongGap(Number(e.target.value))}
+            placeholder="Songs gap"
+          />
+        </div>
+      </div>
+      <div className="flex flex-row flex-wrap gap-4">
+        {setLength.map((length, index) => (
+          <div
+            key={index}
+            className="w-full md:w-[calc(33%-1rem)]">
+            <h4>Set {index + 1} length (minutes):</h4>
+            <input
+              type="number"
+              className="border p-2 rounded w-full"
+              min={1}
+              value={length}
+              onChange={e => handleSetLengthChange(index, Number(e.target.value))}
+              placeholder="Set length (minutes)"
+            />
+          </div>
+        ))}
       </div>
     </div>
 
@@ -277,7 +322,7 @@ export const SongGenerator: React.FC = () => {
       </label>
     </div>
 
-    <div className="flex gap-2">
+    <div className="flex gap-2  mb-4">
       <button onClick={generateSets} className="bg-blue-500 text-white px-4 py-2 rounded">Generate List</button>
       <button onClick={copyToClipboard} className="bg-green-500 text-white px-4 py-2 rounded">Copy List</button>
     </div>
@@ -385,14 +430,15 @@ export const SongGenerator: React.FC = () => {
       })}
     </div>
       </div>
-      {chinListVisible 
-        ? (<div><ChinSongList /></div>)
-        : null}
+        <div className="w-full md:w-1/2">
+          {chinListVisible 
+          ? (<div><ChinSongList /></div>)
+          : null}
 
-      {engListVisible 
-        ? (<div><EngSongList /></div>)
-        : null}
-
+          {engListVisible 
+            ? (<div><EngSongList /></div>)
+            : null}
+        </div>
     </div>
   );
 };
