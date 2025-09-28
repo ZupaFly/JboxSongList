@@ -8,6 +8,7 @@ interface Song {
   duration: string;
   extra?: string;
   actuality?: string;
+  chin?: string;
 }
 
 export const ChinSongList = () => {
@@ -17,7 +18,7 @@ export const ChinSongList = () => {
     name: '',
     duration: '',
     extra: '',
-    actuality:'',
+    actuality:'active',
   });
 
   const [changeChin, setChangeChin] = useState<{
@@ -140,7 +141,8 @@ const changeChinSong = (song: Song) => {
   return (
     <div className="bg-pink-100 border-none rounded-2xl">
       <div className="flex justify-between pl-4 pt-4 pr-4 mb-2 pb-0">
-        <h2>Chinese song list</h2>
+        <h2 onClick={scrollToForm}
+          className="bg-red-600 rounded-2xl p-1 flex items-center justify-center text-white cursor-pointer">Create PDF</h2>
         <h2 
           onClick={scrollToForm}
           className="bg-red-600 rounded-2xl p-1 flex items-center justify-center text-white cursor-pointer">Add new song</h2>
@@ -150,6 +152,7 @@ const changeChinSong = (song: Song) => {
           songs={chinSongs} 
           changeSong={changeChinSong} 
           setChangeSong={setChangeChin}
+          chin={'chin'}
         />
       </ul>
 
@@ -233,7 +236,7 @@ const changeChinSong = (song: Song) => {
         <div className="flex justify-center mt-4">
           <button
             type="submit"
-            className="bg-blue-500 text-white w-1/2 px-3 py-1 rounded mb-2"
+            className="bg-blue-500 text-white w-1/2 px-3 py-1 rounded mb-2 cursor-pointer hover:bg-blue-600"
           >
             Add song
           </button>

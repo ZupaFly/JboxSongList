@@ -52,7 +52,7 @@ export const SongGenerator: React.FC = () => {
       if (numSets > prev.length) {
         return [...newArr, ...Array(numSets - prev.length).fill(20)];
       } else {
-        // обрізаємо зайві
+
         return newArr.slice(0, numSets);
       }
     });
@@ -90,7 +90,6 @@ export const SongGenerator: React.FC = () => {
     return [...arr].sort(() => Math.random() - 0.5);
   };
 
-  // ===== Fetch songs from API =====
   useEffect(() => {
     const fetchEng = async () => {
       const res = await fetch("https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/engSongs", {
@@ -116,7 +115,6 @@ export const SongGenerator: React.FC = () => {
     fetchChin();
   }, []);
 
-  // ===== Generate Sets =====
   const generateSets = () => { 
     if (!eng.length || !chinese.length) return;
     const extras = selectedExtras();
@@ -215,6 +213,8 @@ export const SongGenerator: React.FC = () => {
       return;
     }
     const combined = [...eng, ...chinese];
+
+    console.log(combined.map((i)=>i));
     const filtered = combined.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
     setDropdownOptions(filtered);
     if (filtered.length === 0) setSelectedSong(null);
@@ -238,7 +238,7 @@ export const SongGenerator: React.FC = () => {
       <div className="flex-1">
         <div className="flex gap-4">
           <div 
-            className="border rounded p-2 text-[16px] bg-amber-300 hover:bg-amber-400 box-border"
+            className="border rounded p-2 text-[16px] bg-amber-300 hover:bg-amber-400 box-border cursor-pointer"
             onClick={(() => {
               setChinListVisible(false)
               setEngListVisible(true)
@@ -246,14 +246,14 @@ export const SongGenerator: React.FC = () => {
                 English songlist
             </div>
           <div
-            className="border rounded p-2 text-[16px] bg-amber-300 hover:bg-amber-400 box-border"
+            className="border rounded p-2 text-[16px] bg-amber-300 hover:bg-amber-400 box-border cursor-pointer"
             onClick={(() => {
               setChinListVisible(true)
               setEngListVisible(false)
             })}>
               Chinese songlist</div>
         </div>
-    {/* Inputs for set length and num sets */}
+
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row gap-4">
         <div>
@@ -299,7 +299,6 @@ export const SongGenerator: React.FC = () => {
       </div>
     </div>
 
-    {/* Checkboxes for extras */}
     <div className="flex flex-wrap gap-4">
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={holidays} onChange={() => setHolidays(!holidays)} /> Weekend/Holidays
@@ -312,7 +311,6 @@ export const SongGenerator: React.FC = () => {
       </label>
     </div>
 
-    {/* Host and first song */}
     <div className="flex flex-wrap gap-4">
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={host} onChange={() => setHost(!host)} /> Have host?
@@ -323,8 +321,8 @@ export const SongGenerator: React.FC = () => {
     </div>
 
     <div className="flex gap-2  mb-4">
-      <button onClick={generateSets} className="bg-blue-500 text-white px-4 py-2 rounded">Generate List</button>
-      <button onClick={copyToClipboard} className="bg-green-500 text-white px-4 py-2 rounded">Copy List</button>
+      <button onClick={generateSets} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer">Generate List</button>
+      <button onClick={copyToClipboard} className="bg-green-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-green-700">Copy List</button>
     </div>
 
     <div className="space-y-4">
@@ -369,7 +367,6 @@ export const SongGenerator: React.FC = () => {
               ))}
             </ul>
 
-            {/* Search dropdown */}
             <div className="mb-2 relative">
               <input
                 type="text"
@@ -413,14 +410,14 @@ export const SongGenerator: React.FC = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => addSongToSet(setIndex)}
-                className="bg-yellow-500 text-white px-2 py-1 rounded"
+                className="bg-yellow-500 text-white px-2 cursor-pointer hover:bg-yellow-600 py-1 rounded"
                 disabled={!selectedSong}
               >
                 Add Song
               </button>
               <button
                 onClick={() => removeSong(setIndex)}
-                className="bg-red-500 text-white px-2 py-1 rounded"
+                className="bg-red-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-red-600"
               >
                 Remove Song
               </button>

@@ -17,7 +17,7 @@ export const EngSongList = () => {
     name: '',
     duration: '',
     extra: '',
-    actuality:'',
+    actuality:'active',
   });
 
   const [changeEng, setChangeEng] = useState<{
@@ -109,6 +109,7 @@ const changeEngSong = (song: Song) => {
       name: addEng.name,
       duration: addEng.duration,
       extra: addEng.extra,
+      actuality: addEng.actuality,
     };
 
     fetch("https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/engSongs", {
@@ -140,7 +141,9 @@ const changeEngSong = (song: Song) => {
   return (
     <div className="bg-pink-100 border-none rounded-2xl">
       <div className="flex justify-between pl-4 pt-4 pr-4 mb-2 pb-0">
-        <h2>English song list</h2>
+        <h2 
+          onClick={scrollToForm}
+          className="bg-red-600 rounded-2xl p-1 flex items-center justify-center text-white cursor-pointer">Create PDF</h2>
         <h2 
           onClick={scrollToForm}
           className="bg-red-600 rounded-2xl p-1 flex items-center justify-center text-white cursor-pointer">Add new song</h2>
@@ -221,8 +224,8 @@ const changeEngSong = (song: Song) => {
 
             <select
               className="text-black p-1 border rounded w-full"
-              value={addEng.extra || 'active'}
-              onChange={(e) => setAddEng(prev => ({ ...prev, extra: e.target.value }))}
+              value={'active'}
+              onChange={(e) => setAddEng(prev => ({ ...prev, actuality: e.target.value }))}
             >
             <option value="active">Active</option>
             <option value="passive">Passive</option>
@@ -233,7 +236,7 @@ const changeEngSong = (song: Song) => {
         <div className="flex justify-center mt-4">
           <button
             type="submit"
-            className="bg-blue-500 text-white w-1/2 px-3 py-1 rounded mb-2"
+            className="bg-blue-500 text-white w-1/2 px-3 py-1 rounded mb-2 cursor-pointer hover:bg-blue-600"
           >
             Add song
           </button>
