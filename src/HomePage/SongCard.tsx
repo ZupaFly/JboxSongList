@@ -28,11 +28,22 @@ interface SongCardProps {
 
 export const SongCard: FC<SongCardProps> = ({ songs, changeSong, setChangeSong, chin }) => {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
-  const [exportFile, setExportFile] = useState<boolean>(true)
+  const [exportFile, setExportFile] = useState<boolean>(true);
+  const [password, setPassword] =  useState(false);
+  const [enteredPassword, setEnteredPassword] = useState<string>('');
+  const [error, setError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const focusInput = () => inputRef.current?.focus();
+  const pass = '12345';
+
+  const checkPassword = () => {
+  if (enteredPassword === pass) {
+    setPassword(true);
+  }
+  setError(true);
+};
 
 const handleInputChange = (field: keyof Song, value: string) => {
   if (!selectedSong) return;
@@ -126,62 +137,89 @@ const exportToPDF = async () => {
               actuality: song.actuality || ''
             });
           }}
-          style={{ backgroundColor: '#fca5a5'}}
-          className="border-none rounded-[10px] pb-1 mb-1 text-left px-2 cursor-pointer w-full z-50"
+          className="border-none rounded-[10px] pb-1 mb-1 text-left px-2 cursor-pointer w-full z-50 bg-[#eda58f]"
         >
           {index + 1}. {song.name}
         </button>
       ))}
 
-      {selectedSong && (
-        <div 
-          className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full relative shadow-lg flex flex-col gap-4 z-50">
-            <h2 className="text-xl font-bold">Редактирование песни</h2>
+{selectedSong && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div className="bg-white rounded-xl p-6 max-w-md w-full relative shadow-lg flex flex-col gap-4 z-50">
+      {password === true ? (
+        <>
+          <h2 className="text-xl font-bold">Update song information</h2>
 
-            {(['name', 'duration', 'extra', 'actuality'] as (keyof Song)[]).map(field => (
-              <div key={field} className="flex items-center gap-2">
-                <label className="w-24 capitalize">{field}:</label>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={selectedSong[field] ?? ''}
-                  onChange={(e) => handleInputChange(field, e.target.value)}
-                  className="border p-1 rounded flex-1"
-                />
-                <button
-                  type="button"
-                  onClick={focusInput}
-                  className="w-6 h-6 bg-no-repeat bg-center bg-contain"
-                  style={{ backgroundImage: `url(${change})` }}
-                />
-              </div>
-            ))}
-
-            <div className="flex justify-end gap-2 mt-4">
+          {(['name', 'duration', 'extra', 'actuality'] as (keyof Song)[]).map(field => (
+            <div key={field} className="flex items-center gap-2">
+              <label className="w-24 capitalize">{field}:</label>
+              <input
+                ref={inputRef}
+                type="text"
+                value={selectedSong[field] ?? ''}
+                onChange={(e) => handleInputChange(field, e.target.value)}
+                className="border p-1 rounded flex-1"
+              />
               <button
                 type="button"
-                onClick={() => setSelectedSong(null)}
-                className="px-4 py-2 bg-gray-300 rounded"
-              >
-                Cancel
-              </button>
+                onClick={focusInput}
+                className="w-6 h-6 bg-no-repeat bg-center bg-contain"
+                style={{ backgroundImage: `url(${change})` }}
+              />
+            </div>
+          ))}
+
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              onClick={() => setSelectedSong(null)}
+              className="px-4 py-2 bg-gray-300 rounded cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              style={{ backgroundColor: '#3B82F6'}}
+              className="px-4 py-2 text-white rounded cursor-pointer"
+            >
+              Save changes
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <h2 className="text-xl font-bold">Enter the password:</h2>
+          <div className="flex flex-col items-left">
+            <div className="flex items-center gap-2 mt-4">
+              <input
+                ref={inputRef}
+                type="password"
+                value={enteredPassword}
+                onChange={(e) => setEnteredPassword(e.target.value)}
+                className="border p-1 rounded flex-1"
+              />
               <button
                 type="button"
-                onClick={handleSave}
-                style={{ backgroundColor: '#3B82F6'}}
-                className="px-4 py-2 text-white rounded"
+                onClick={checkPassword}
+                className="px-3 py-1 bg-blue-500 text-white rounded cursor-pointer"
               >
-                Save changes
+                OK
               </button>
             </div>
+              {error && (
+                <div className="text-red-600 text-left">Wrong Password...</div>
+              )}
           </div>
-        </div>
+        </>
       )}
+    </div>
+  </div>
+)}
     </div>
       <button
         onClick={exportToPDF}
-        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer"
+        className="mt-4 px-4 py-2 bg-blue-500 transform-color duration-300 ease-in text-white rounded hover:bg-blue-600 cursor-pointer"
       >
         {`${exportFile
           ? 'Export to PDF'

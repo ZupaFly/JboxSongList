@@ -142,10 +142,10 @@ const changeChinSong = (song: Song) => {
     <div className="bg-pink-100 border-none rounded-2xl">
       <div className="flex justify-between pl-4 pt-4 pr-4 mb-2 pb-0">
         <h2 onClick={scrollToForm}
-          className="bg-red-600 rounded-2xl p-1 flex items-center justify-center text-white cursor-pointer">Create PDF</h2>
+          className="bg-[#f4ad97]  rounded-2xl p-1 flex items-center justify-center cursor-pointer transform-color duration-300 ease-in hover:bg-[#ed6f48]">Create PDF</h2>
         <h2 
           onClick={scrollToForm}
-          className="bg-red-600 rounded-2xl p-1 flex items-center justify-center text-white cursor-pointer">Add new song</h2>
+          className="bg-[#f4ad97]  rounded-2xl p-1 flex items-center justify-center cursor-pointer transform-color duration-300 ease-in hover:bg-[#ed6f48]">Add new song</h2>
       </div>
       <ul>
         <SongCard

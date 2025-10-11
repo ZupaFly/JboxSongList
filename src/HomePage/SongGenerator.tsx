@@ -234,11 +234,11 @@ export const SongGenerator: React.FC = () => {
   console.log(chinListVisible)
 
   return (
-    <div className="p-4 font-sans space-y-4 bg-pink-200 flex flex-col md:flex-row gap-4">
+    <div className="p-4 font-sans space-y-4 bg-[#bed9ff] flex flex-col md:flex-row gap-4">
       <div className="flex-1">
         <div className="flex gap-4">
           <div 
-            className="border rounded p-2 text-[16px] bg-amber-300 hover:bg-amber-400 box-border cursor-pointer"
+            className="border rounded p-2 text-[16px] bg-[#f4ad97] hover:bg-[#ed6f48] transition-colors duration-300 ease-in-out box-border cursor-pointer"
             onClick={(() => {
               setChinListVisible(false)
               setEngListVisible(true)
@@ -246,7 +246,7 @@ export const SongGenerator: React.FC = () => {
                 English songlist
             </div>
           <div
-            className="border rounded p-2 text-[16px] bg-amber-300 hover:bg-amber-400 box-border cursor-pointer"
+            className="border rounded p-2 text-[16px] bg-[#f4ad97] hover:bg-[#ed6f48] transition-colors duration-300 ease-in-out box-border cursor-pointer"
             onClick={(() => {
               setChinListVisible(true)
               setEngListVisible(false)
@@ -321,8 +321,8 @@ export const SongGenerator: React.FC = () => {
     </div>
 
     <div className="flex gap-2  mb-4">
-      <button onClick={generateSets} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer">Generate List</button>
-      <button onClick={copyToClipboard} className="bg-green-500 text-white px-4 py-2 rounded cursor-pointer hover:bg-green-700">Copy List</button>
+      <button onClick={generateSets} className="bg-blue-500 text-white px-4 py-2 rounded transition-colors duration-300 ease-in hover:bg-blue-700 cursor-pointer">Generate List</button>
+      <button onClick={copyToClipboard} className="bg-blue-500 text-white px-4 py-2 rounded transition-colors duration-300 ease-in hover:bg-blue-700 cursor-pointer">Copy List</button>
     </div>
 
     <div className="space-y-4">
@@ -410,14 +410,14 @@ export const SongGenerator: React.FC = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => addSongToSet(setIndex)}
-                className="bg-yellow-500 text-white px-2 cursor-pointer hover:bg-yellow-600 py-1 rounded"
+                className="bg-green-500 transform-color duration-300 ease-in text-white px-2 cursor-pointer hover:bg-green-600 py-1 rounded"
                 disabled={!selectedSong}
               >
                 Add Song
               </button>
               <button
                 onClick={() => removeSong(setIndex)}
-                className="bg-red-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-red-600"
+                className="bg-red-500 text-white px-2 py-1 rounded cursor-pointer transform-color duration-300 ease-in hover:bg-red-600"
               >
                 Remove Song
               </button>
