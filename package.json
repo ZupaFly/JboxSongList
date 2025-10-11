@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "deploy": "gh-pages -d dist",
+    "deploy": "gh-pages -d dist -f",
     "lint": "eslint .",
     "preview": "vite preview",
     "build-css": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch"
