@@ -32,6 +32,8 @@ export const SongCard: FC<SongCardProps> = ({ songs, changeSong, setChangeSong, 
   const [password, setPassword] =  useState(false);
   const [enteredPassword, setEnteredPassword] = useState<string>('');
   const [error, setError] = useState(false);
+  const [filterSong, setFilterSong] = useState("active");
+
   const inputRef = useRef<HTMLInputElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -44,6 +46,9 @@ export const SongCard: FC<SongCardProps> = ({ songs, changeSong, setChangeSong, 
   }
   setError(true);
 };
+
+const songsFiltered = songs.filter((song) => 
+  filterSong === 'all' ? song : song.actuality === filterSong);
 
 const handleInputChange = (field: keyof Song, value: string) => {
   if (!selectedSong) return;
@@ -120,11 +125,32 @@ const exportToPDF = async () => {
 
   return (
     <>
-    <div ref={printRef} className="rounded-[10px] pb-1 mb-1 text-center flex flex-col justify-center items-center px-2 cursor-pointer">
-      <h2 className="border-none rounded-[10px] pb-1 mb-1 text-left px-2 cursor-pointer w-full">{`J-box ${chin === 'chin'
+    <div
+      ref={printRef}
+      className="rounded-[10px] pb-1 mb-1 text-center flex flex-col justify-center items-center px-2 cursor-pointer">
+
+    <div className="w-full flex flex-col items-center">
+      <h2 className="w-full text-left border-none rounded-[10px] pb-1 mb-1 px-2 cursor-pointer">{`J-box ${chin === 'chin'
         ? 'Chinese'
-        : 'English'} Song List:`}</h2>
-      {songs.map((song, index) => (
+        : 'English'} Song List:`}
+      </h2>
+      <div className="p-2 flex flex-col items-center">
+        <label htmlFor="song" className="block mb-1 font-semibold">
+          Choose songlist actuality:
+        </label>
+        <select
+          id="song"
+          value={filterSong}
+          onChange={(e) => setFilterSong(e.target.value)}
+          className="border border-gray-300 rounded-lg p-2 w-64"
+        >
+          <option value="active">Active songlist</option>
+          <option value="passive">Passive songlist</option>
+          <option value="all">Full songlist</option>
+        </select>
+      </div>
+    </div>
+      {songsFiltered.map((song, index) => (
         <button
           key={index}
           onClick={() => {
