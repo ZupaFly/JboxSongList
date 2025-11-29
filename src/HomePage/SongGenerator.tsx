@@ -21,8 +21,6 @@ export const SongGenerator: React.FC = () => {
   const [songGap, setSongGap] = useState<number>(10)
 
   const [setLength, setSetLength] = useState<number[]>(Array(3).fill(20));
-
-  console.log(setLength);
   const [numSets, setNumSets] = useState<number>(3);
 
   const [holidays, setHolidays] = useState(false);
@@ -129,10 +127,14 @@ export const SongGenerator: React.FC = () => {
       const result: SetSong[] = [];
 
       let filteredEng = eng.filter(
-        s => s.actuality !== "inactive" && (!s.extra || extras.includes(s.extra)) && !usedEng.has(s.name)
+        s => s.actuality !== "inactive" 
+          && (!s.extra || s.extra === "holidays" && extras.includes(s.extra))
+          && !usedEng.has(s.name)
       );
       let filteredChin = chinese.filter(
-        s => s.actuality !== "inactive" && (!s.extra || extras.includes(s.extra)) && !usedChin.has(s.name)
+        s => s.actuality !== "inactive" 
+          && (!s.extra || s.extra === "holidays" || extras.includes(s.extra))
+          && !usedChin.has(s.name)
       );
 
       filteredEng = shuffleArray(filteredEng);
@@ -212,9 +214,8 @@ export const SongGenerator: React.FC = () => {
       setDropdownOptions([]);
       return;
     }
-    const combined = [...eng, ...chinese];
 
-    console.log(combined.map((i)=>i));
+    const combined = [...eng, ...chinese];
     const filtered = combined.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
     setDropdownOptions(filtered);
     if (filtered.length === 0) setSelectedSong(null);
@@ -230,8 +231,6 @@ export const SongGenerator: React.FC = () => {
     navigator.clipboard.writeText(text);
     alert("Copied!");
   };
-
-  console.log(chinListVisible)
 
   return (
     <div className="p-4 font-sans space-y-4 bg-[#bed9ff] flex flex-col md:flex-row gap-4">
