@@ -137,9 +137,12 @@ export const SongGenerator: React.FC = () => {
           && !usedChin.has(s.name)
       );
 
+      
       filteredEng = shuffleArray(filteredEng);
       filteredChin = shuffleArray(filteredChin);
-
+      
+      console.log(filteredChin);
+      console.log(filteredEng);
       while (count > 0 && (filteredEng.length || filteredChin.length)) {
         const firstArray = firstSongEng ? filteredEng : filteredChin;
         const secondArray = firstSongEng ? filteredChin : filteredEng;
