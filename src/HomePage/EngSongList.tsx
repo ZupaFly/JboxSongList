@@ -35,11 +35,10 @@ export const EngSongList = () => {
   });
 
   const [loading, setLoading] = useState(true);
+  const [songLoading, setSongLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFta2R5YXF0aGlwZW1pbXZvb3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwODkwODksImV4cCI6MjA3MzY2NTA4OX0.KS4J9xZA-1yScHmtbjAfKfeHTa2ewqwyo6lOMUp8F_w';
-
-  console.log('addEng', addEng);
-  console.log('changeEng', changeEng);
 
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -100,10 +99,14 @@ const changeEngSong = (song: Song) => {
       .catch(err => setError(err.message));
   }
 
+  const isFormValid =
+    addEng.name.trim() !== '' &&
+    /^\d{2}:\d{2}$/.test(addEng.duration);
 
   const addSong = (e: React.FormEvent) => {
     e.preventDefault();
     if (!addEng) return;
+    setSongLoading(true);
 
     const newSong: Song = {
       name: addEng.name,
@@ -124,6 +127,9 @@ const changeEngSong = (song: Song) => {
     })
       .then(res => res.json())
       .then(data => {
+        if(data) {
+          setSuccess(true);
+        }
         setEngSongs(prev => [...prev, data]);
         setAddEng({
           name: '',
@@ -132,7 +138,14 @@ const changeEngSong = (song: Song) => {
           actuality:'',
         });
       })
-      .catch(err => setError(err.message));
+      .catch(err => setError(err.message))
+      .finally(() => {
+        setSongLoading(false);
+
+        setTimeout(() => {
+          setSuccess(false);
+        }, 3000);
+      });
   }
 
   if (loading) return <p>Loading...</p>;
@@ -168,12 +181,14 @@ const changeEngSong = (song: Song) => {
               value={addEng.name}
               placeholder="Song name"
               onChange={(e) => setAddEng(prev => ({...prev, name: e.target.value}))}
+              required
             />
             <input
               className="text-black p-1 border rounded w-full"
               type="text"
               value={addEng.duration}
               placeholder="Song length mm:ss"
+              required
               onChange={(e) => {
                 let value = e.target.value.replace(/\D/g, '');
                 if (value.length > 4) value = value.slice(0, 4);
@@ -236,9 +251,20 @@ const changeEngSong = (song: Song) => {
         <div className="flex justify-center mt-4">
           <button
             type="submit"
-            className="bg-blue-500 text-white w-1/2 px-3 py-1 rounded mb-2 cursor-pointer transform-color duration-300 ease-in hover:bg-blue-600"
+            disabled={!isFormValid || songLoading}
+            className={`text-white w-1/2 px-3 py-1 rounded mb-2
+              ${success 
+                ? 'cursor-pointer bg-green-500'
+                : isFormValid
+                  ? 'cursor-pointer bg-blue-500 hover:bg-blue-600'
+                  : 'cursor-not-allowed bg-blue-300'}
+              transition-colors duration-300 ease-in`}
           >
-            Add song
+            {songLoading
+            ? 'Song is loading'
+            : success 
+              ? 'Success!!!'
+              : 'Add song'}
           </button>
         </div>
       </form>

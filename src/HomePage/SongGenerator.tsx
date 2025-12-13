@@ -39,6 +39,7 @@ export const SongGenerator: React.FC = () => {
 
   const [chinListVisible, setChinListVisible] = useState(false);
   const [engListVisible, setEngListVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const songsGap = songGap;
   const hostGap = 60;
@@ -90,14 +91,22 @@ export const SongGenerator: React.FC = () => {
 
   useEffect(() => {
     const fetchEng = async () => {
-      const res = await fetch("https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/engSongs", {
-        headers: {
-          'apikey': apiKey,
-          'Authorization': apiKey,
-        }
-      });
-      const data: Song[] = await res.json();
-      setEng(data.filter((filt) => filt.actuality === 'active'));
+      setIsLoading(true);
+      try {
+        const res = await fetch("https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/engSongs", {
+          headers: {
+            'apikey': apiKey,
+            'Authorization': apiKey,
+          }
+        });
+
+        const data: Song[] = await res.json();
+        setEng(data.filter(song => song.actuality === "active"));
+      } catch (error) {
+        console.error("Fetch error:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     const fetchChin = async () => {
       const res = await fetch("https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/chinSongs", {
@@ -265,7 +274,11 @@ export const SongGenerator: React.FC = () => {
             className="border p-2 rounded w-full md:w-48"
             min={1}
             value={numSets}
-            onChange={e => setNumSets(Number(e.target.value))}
+            onChange={e => 
+              Number(e.target.value) < 1
+                ? setNumSets(1)
+                : setNumSets(Number(e.target.value))
+              }
             placeholder="Number of sets"
           />
         </div>
@@ -277,7 +290,11 @@ export const SongGenerator: React.FC = () => {
             className="border p-2 rounded w-full md:w-48"
             min={1}
             value={songGap}
-            onChange={e => setSongGap(Number(e.target.value))}
+            onChange={e => 
+              Number(e.target.value) < 1
+                ? setSongGap(1)
+                : setSongGap(Number(e.target.value))
+            }
             placeholder="Songs gap"
           />
         </div>
@@ -323,7 +340,16 @@ export const SongGenerator: React.FC = () => {
     </div>
 
     <div className="flex gap-2  mb-4">
-      <button onClick={generateSets} className="bg-blue-500 text-white px-4 py-2 rounded transition-colors duration-300 ease-in hover:bg-blue-700 cursor-pointer">Generate List</button>
+      <button
+        onClick={generateSets}
+        disabled={isLoading}
+        className={`px-4 py-2 rounded transition-colors duration-300 ease-in cursor-pointer
+          ${isLoading 
+            ? "bg-gray-400 cursor-not-allowed" 
+            : "bg-blue-500 text-white hover:bg-blue-700"}`}
+      >
+          {isLoading ? "Loading..." : "Generate List"}
+        </button>
       <button onClick={copyToClipboard} className="bg-blue-500 text-white px-4 py-2 rounded transition-colors duration-300 ease-in hover:bg-blue-700 cursor-pointer">Copy List</button>
     </div>
 
