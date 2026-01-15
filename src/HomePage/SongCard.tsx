@@ -89,14 +89,33 @@ const exportToPDF = async () => {
 
       const canvas = await html2canvas(el, {
         scale: 2,
-        backgroundColor: null,
+        backgroundColor: "#ffffff",
         onclone: (clonedDoc) => {
+          const all = clonedDoc.querySelectorAll("*");
 
-          const clonedButtons = clonedDoc.querySelectorAll('button');
-          clonedButtons.forEach(btn => {
-            (btn as HTMLElement).style.textAlign = "left";
-            (btn as HTMLElement).style.justifyContent = "left";
-            (btn as HTMLElement).style.background = "transparent";
+          all.forEach((node) => {
+            const style = window.getComputedStyle(node);
+
+            if (style.backgroundColor.includes("oklch")) {
+              (node as HTMLElement).style.backgroundColor = "#ffffff";
+            }
+
+            if (style.borderColor.includes("oklch")) {
+              (node as HTMLElement).style.borderColor = "#000000";
+            }
+
+            if (style.color.includes("oklch")) {
+              (node as HTMLElement).style.color = "#000000";
+            }
+          });
+
+          const buttons = clonedDoc.querySelectorAll("button");
+          buttons.forEach((btn) => {
+            const el = btn as HTMLElement;
+            el.style.background = "transparent";
+            el.style.color = "#000000";
+            el.style.textAlign = "left";
+            el.style.justifyContent = "flex-start";
           });
         }
       });
@@ -215,7 +234,11 @@ const exportToPDF = async () => {
         </>
       ) : (
         <>
-          <h2 className="text-xl font-bold">Enter the password:</h2>
+          <div className="flex justify-between">
+            <h2 className="text-xl font-bold">Enter the password:</h2>
+            <div onClick={() => setSelectedSong(null)}>X</div>
+          </div>
+
           <div className="flex flex-col items-left">
             <div className="flex items-center gap-2 mt-4">
               <input
