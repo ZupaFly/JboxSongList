@@ -138,38 +138,37 @@ const exportToPDF = async () => {
 
   return (
     <>
+    <div className="w-full flex flex-col items-center p-2 gap-2">
+      <label htmlFor="song" className="block mb-1 font-semibold">
+        Choose songlist actuality:
+      </label>
+      <select
+        id="song"
+        value={filterSong}
+        onChange={(e) => setFilterSong(e.target.value)}
+        className="border border-slate-300 rounded-lg p-2 w-64"
+      >
+        <option value="active">Active songlist</option>
+        <option value="passive">Passive songlist</option>
+        <option value="all">Full songlist</option>
+      </select>
+      <input
+        type="text"
+        placeholder="Search song..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="border border-slate-300 rounded-lg p-2 w-64"
+      />
+    </div>
+
     <div
       ref={printRef}
       className="rounded-[10px] pb-1 mb-1 text-center flex flex-col justify-center items-center px-2 cursor-pointer">
 
-    <div className="w-full flex flex-col items-center">
       <h2 className="w-full text-left border-none rounded-[10px] pb-1 mb-1 px-2 cursor-pointer">{`J-box ${chin === 'chin'
         ? 'Chinese'
         : 'English'} Song List:`}
       </h2>
-      <div className="p-2 flex flex-col items-center gap-2">
-        <label htmlFor="song" className="block mb-1 font-semibold">
-          Choose songlist actuality:
-        </label>
-        <select
-          id="song"
-          value={filterSong}
-          onChange={(e) => setFilterSong(e.target.value)}
-          className="border border-slate-300 rounded-lg p-2 w-64"
-        >
-          <option value="active">Active songlist</option>
-          <option value="passive">Passive songlist</option>
-          <option value="all">Full songlist</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Search song..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border border-slate-300 rounded-lg p-2 w-64"
-        />
-      </div>
-    </div>
       {songsFiltered.map((song, index) => (
         <button
           key={song.id ?? index}
@@ -188,6 +187,7 @@ const exportToPDF = async () => {
           {index + 1}. {song.name}
         </button>
       ))}
+    </div>
 
 {selectedSong && (
   <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
@@ -280,7 +280,6 @@ const exportToPDF = async () => {
     </div>
   </div>
 )}
-    </div>
       <button
         onClick={exportToPDF}
         className="mt-4 px-4 py-2 bg-blue-500 transform-color duration-300 ease-in text-white rounded hover:bg-blue-600 cursor-pointer"
