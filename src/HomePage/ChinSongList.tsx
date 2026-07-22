@@ -83,7 +83,7 @@ const changeChinSong = (song: Song) => {
         setError(error.message);
         return;
       }
-      setChinSongs(prev => [...prev, data?.[0]]);
+      setChinSongs(prev => prev.map(s => (s.id === data?.[0]?.id ? data[0] : s)));
       setChangeChin({
         id: '',
         name: '',
@@ -123,7 +123,7 @@ const changeChinSong = (song: Song) => {
         name: '',
         duration: '',
         extra: '',
-        actuality:'',
+        actuality:'active',
       });
     } finally {
       setSongLoading(false);
@@ -228,8 +228,8 @@ const changeChinSong = (song: Song) => {
 
             <select
               className="text-black p-1 border rounded w-full"
-              value={'active'}
-              onChange={(e) => setAddChin(prev => ({ ...prev, extra: e.target.value }))}
+              value={addChin.actuality}
+              onChange={(e) => setAddChin(prev => ({ ...prev, actuality: e.target.value }))}
             >
             <option value="active">Active</option>
             <option value="passive">Passive</option>

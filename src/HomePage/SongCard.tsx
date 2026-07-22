@@ -187,7 +187,7 @@ const exportToPDF = async () => {
         <>
           <h2 className="text-xl font-bold">Update song information</h2>
 
-          {(['name', 'duration', 'extra', 'actuality'] as (keyof Song)[]).map(field => (
+          {(['name', 'duration', 'extra'] as (keyof Song)[]).map(field => (
             <div key={field} className="flex items-center gap-2">
               <label className="w-24 capitalize">{field}:</label>
               <input
@@ -205,6 +205,18 @@ const exportToPDF = async () => {
               />
             </div>
           ))}
+
+          <div className="flex items-center gap-2">
+            <label className="w-24 capitalize">actuality:</label>
+            <select
+              value={selectedSong.actuality ?? 'active'}
+              onChange={(e) => handleInputChange('actuality', e.target.value)}
+              className="border p-1 rounded flex-1"
+            >
+              <option value="active">Active</option>
+              <option value="passive">Passive</option>
+            </select>
+          </div>
 
           <div className="flex justify-end gap-2 mt-4">
             <button

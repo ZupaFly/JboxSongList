@@ -82,7 +82,7 @@ const changeEngSong = (song: Song) => {
         setError(error.message);
         return;
       }
-      setEngSongs(prev => [...prev, data?.[0]]);
+      setEngSongs(prev => prev.map(s => (s.id === data?.[0]?.id ? data[0] : s)));
       setChangeEng({
         id: '',
         name: '',
@@ -123,7 +123,7 @@ const changeEngSong = (song: Song) => {
         name: '',
         duration: '',
         extra: '',
-        actuality:'',
+        actuality:'active',
       });
     } finally {
       setSongLoading(false);
@@ -230,7 +230,7 @@ const changeEngSong = (song: Song) => {
 
             <select
               className="text-black p-1 border rounded w-full"
-              value={'active'}
+              value={addEng.actuality}
               onChange={(e) => setAddEng(prev => ({ ...prev, actuality: e.target.value }))}
             >
             <option value="active">Active</option>
