@@ -2,9 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import { engSongs } from './src/utilites/endSongList.js';
 import { chinSongs } from './src/utilites/chinSongList.js';
 
-const supabase = createClient (
-  'https://qmkdyaqthipemimvoovy.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFta2R5YXF0aGlwZW1pbXZvb3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwODkwODksImV4cCI6MjA3MzY2NTA4OX0.KS4J9xZA-1yScHmtbjAfKfeHTa2ewqwyo6lOMUp8F_w'
+// Run with: node --env-file=.env importSongs.js
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY
 );
 
 async function upload () {

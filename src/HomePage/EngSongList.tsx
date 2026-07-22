@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import { SongCard } from "./SongCard";
+import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../auth/useAuth";
+import { LoginForm } from "../auth/LoginForm";
 
 interface Song {
   id?: string;
@@ -11,7 +14,7 @@ interface Song {
 }
 
 export const EngSongList = () => {
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
   const [engSongs, setEngSongs] = useState<Song[]>([]);
   const [addEng, setAddEng] = useState({
     name: '',
@@ -38,7 +41,7 @@ export const EngSongList = () => {
   const [songLoading, setSongLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFta2R5YXF0aGlwZW1pbXZvb3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwODkwODksImV4cCI6MjA3MzY2NTA4OX0.KS4J9xZA-1yScHmtbjAfKfeHTa2ewqwyo6lOMUp8F_w';
+  const { session } = useAuth();
 
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,16 +50,10 @@ export const EngSongList = () => {
 useEffect(() => {
   const fetchEngSongs = async () => {
     try {
-      const res = await fetch("https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/engSongs", {
-        headers: {
-          'apikey': apiKey,
-          'Authorization': apiKey,
-        }
-      });
-      if (!res.ok) throw new Error("Помилка завантаження стандартного списку");
-      const data = await res.json();
+      const { data, error } = await supabase.from("engSongs").select("*");
+      if (error) throw new Error("Помилка завантаження стандартного списку");
 
-      setEngSongs([...data].sort((a, b) => a.name.localeCompare(b.name)));
+      setEngSongs([...(data as Song[])].sort((a, b) => a.name.localeCompare(b.name)));
     } catch (err:any) {
       setError(err.message);
     } finally {
@@ -70,40 +67,37 @@ useEffect(() => {
 const changeEngSong = (song: Song) => {
   if (!song) return;
 
-    fetch(`https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/engSongs?id=eq.${changeEng.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': apiKey,
-        'Authorization': apiKey,
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify({
-        name: changeEng.name,
-        duration: changeEng.duration,
-        extra: changeEng.extra,
-        actuality: changeEng.actuality
-      })
+  supabase
+    .from("engSongs")
+    .update({
+      name: changeEng.name,
+      duration: changeEng.duration,
+      extra: changeEng.extra,
+      actuality: changeEng.actuality
     })
-      .then(res => res.json())
-      .then(data => {
-        setEngSongs(prev => [...prev, data]);
-        setChangeEng({
-          id: '',
-          name: '',
-          duration: '',
-          extra: '',
-          actuality:'',
-        });
-      })
-      .catch(err => setError(err.message));
+    .eq("id", changeEng.id)
+    .select()
+    .then(({ data, error }) => {
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      setEngSongs(prev => [...prev, data?.[0]]);
+      setChangeEng({
+        id: '',
+        name: '',
+        duration: '',
+        extra: '',
+        actuality:'',
+      });
+    });
   }
 
   const isFormValid =
     addEng.name.trim() !== '' &&
     /^\d{2}:\d{2}$/.test(addEng.duration);
 
-  const addSong = (e: React.FormEvent) => {
+  const addSong = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addEng) return;
     setSongLoading(true);
@@ -115,37 +109,29 @@ const changeEngSong = (song: Song) => {
       actuality: addEng.actuality,
     };
 
-    fetch("https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/engSongs", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': apiKey,
-        'Authorization': apiKey,
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify(newSong)
-    })
-      .then(res => res.json())
-      .then(data => {
-        if(data) {
-          setSuccess(true);
-        }
-        setEngSongs(prev => [...prev, data]);
-        setAddEng({
-          name: '',
-          duration: '',
-          extra: '',
-          actuality:'',
-        });
-      })
-      .catch(err => setError(err.message))
-      .finally(() => {
-        setSongLoading(false);
-
-        setTimeout(() => {
-          setSuccess(false);
-        }, 3000);
+    try {
+      const { data, error } = await supabase.from("engSongs").insert(newSong).select();
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      if(data) {
+        setSuccess(true);
+      }
+      setEngSongs(prev => [...prev, data?.[0]]);
+      setAddEng({
+        name: '',
+        duration: '',
+        extra: '',
+        actuality:'',
       });
+    } finally {
+      setSongLoading(false);
+
+      setTimeout(() => {
+        setSuccess(false);
+      }, 3000);
+    }
   }
 
   if (loading) return <p>Loading...</p>;
@@ -169,8 +155,13 @@ const changeEngSong = (song: Song) => {
         />
       </ul>
 
+      <div ref={formRef}>
+      {!session && (
+        <LoginForm title="Sign in to add songs" />
+      )}
+
+      {session && (
       <form
-        ref={formRef}
         onSubmit={addSong}
         className="flex gap-2 mt-4 flex-col">
         <div>
@@ -268,6 +259,8 @@ const changeEngSong = (song: Song) => {
           </button>
         </div>
       </form>
+      )}
+      </div>
     </div>
   );
 };

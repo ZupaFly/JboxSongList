@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import change from '../images/412-4127471_notepad-pen-svg-png-icon-free-download-notepad.png';
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { useAuth } from "../auth/useAuth";
+import { LoginForm } from "../auth/LoginForm";
 
 interface Song {
   id?: string;
@@ -29,23 +31,13 @@ interface SongCardProps {
 export const SongCard: FC<SongCardProps> = ({ songs, changeSong, setChangeSong, chin }) => {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [exportFile, setExportFile] = useState<boolean>(true);
-  const [password, setPassword] =  useState(false);
-  const [enteredPassword, setEnteredPassword] = useState<string>('');
-  const [error, setError] = useState(false);
   const [filterSong, setFilterSong] = useState("active");
+  const { session } = useAuth();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const focusInput = () => inputRef.current?.focus();
-  const pass = '12345';
-
-  const checkPassword = () => {
-  if (enteredPassword === pass) {
-    setPassword(true);
-  }
-  setError(true);
-};
 
 const songsFiltered = songs.filter((song) => 
   filterSong === 'all' ? song : song.actuality === filterSong);
@@ -88,7 +80,7 @@ const exportToPDF = async () => {
       const el = children[i];
 
       const canvas = await html2canvas(el, {
-        scale: 2,
+        scale: 1,
         backgroundColor: "#ffffff",
         onclone: (clonedDoc) => {
           const all = clonedDoc.querySelectorAll("*");
@@ -120,7 +112,7 @@ const exportToPDF = async () => {
         }
       });
 
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg", 0.7);
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
       if (yOffset + imgHeight > pdfHeight) {
@@ -128,7 +120,7 @@ const exportToPDF = async () => {
         yOffset = 0;
       }
 
-      pdf.addImage(imgData, "PNG", 0, yOffset, pdfWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", 0, yOffset, pdfWidth, imgHeight, undefined, "FAST");
       yOffset += imgHeight;
     }
 
@@ -191,7 +183,7 @@ const exportToPDF = async () => {
 {selectedSong && (
   <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
     <div className="bg-white rounded-xl p-6 max-w-md w-full relative shadow-lg flex flex-col gap-4 z-50">
-      {password === true ? (
+      {session ? (
         <>
           <h2 className="text-xl font-bold">Update song information</h2>
 
@@ -235,31 +227,11 @@ const exportToPDF = async () => {
       ) : (
         <>
           <div className="flex justify-between">
-            <h2 className="text-xl font-bold">Enter the password:</h2>
-            <div onClick={() => setSelectedSong(null)}>X</div>
+            <h2 className="text-xl font-bold">Sign in to edit:</h2>
+            <div onClick={() => setSelectedSong(null)} className="cursor-pointer">X</div>
           </div>
 
-          <div className="flex flex-col items-left">
-            <div className="flex items-center gap-2 mt-4">
-              <input
-                ref={inputRef}
-                type="password"
-                value={enteredPassword}
-                onChange={(e) => setEnteredPassword(e.target.value)}
-                className="border p-1 rounded flex-1"
-              />
-              <button
-                type="button"
-                onClick={checkPassword}
-                className="px-3 py-1 bg-blue-500 text-white rounded cursor-pointer"
-              >
-                OK
-              </button>
-            </div>
-              {error && (
-                <div className="text-red-600 text-left">Wrong Password...</div>
-              )}
-          </div>
+          <LoginForm />
         </>
       )}
     </div>

@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { ChinSongList } from "./ChinSongList";
 import { EngSongList } from "./EngSongList";
+import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../auth/useAuth";
 
 interface Song {
   id: string;
@@ -43,7 +45,7 @@ export const SongGenerator: React.FC = () => {
 
   const songsGap = songGap;
   const hostGap = 60;
-  const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFta2R5YXF0aGlwZW1pbXZvb3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwODkwODksImV4cCI6MjA3MzY2NTA4OX0.KS4J9xZA-1yScHmtbjAfKfeHTa2ewqwyo6lOMUp8F_w';
+  const { session, signOut } = useAuth();
 
   useEffect(() => {
     setSetLength(prev => {
@@ -93,15 +95,9 @@ export const SongGenerator: React.FC = () => {
     const fetchEng = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch("https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/engSongs", {
-          headers: {
-            'apikey': apiKey,
-            'Authorization': apiKey,
-          }
-        });
-
-        const data: Song[] = await res.json();
-        setEng(data.filter(song => song.actuality === "active"));
+        const { data, error } = await supabase.from("engSongs").select("*");
+        if (error) throw error;
+        setEng((data as Song[]).filter(song => song.actuality === "active"));
       } catch (error) {
         console.error("Fetch error:", error);
       } finally {
@@ -109,14 +105,12 @@ export const SongGenerator: React.FC = () => {
       }
     };
     const fetchChin = async () => {
-      const res = await fetch("https://qmkdyaqthipemimvoovy.supabase.co/rest/v1/chinSongs", {
-        headers: {
-          'apikey': apiKey,
-          'Authorization': apiKey,
-        }
-      });
-      const data: Song[] = await res.json();
-      setChinese(data.filter((filt) => filt.actuality === 'active'));
+      const { data, error } = await supabase.from("chinSongs").select("*");
+      if (error) {
+        console.error("Fetch error:", error);
+        return;
+      }
+      setChinese((data as Song[]).filter((filt) => filt.actuality === 'active'));
     };
     fetchEng();
     fetchChin();
@@ -247,22 +241,35 @@ export const SongGenerator: React.FC = () => {
   return (
     <div className="p-4 font-sans space-y-4 bg-[#bed9ff] flex flex-col md:flex-row gap-4">
       <div className="flex-1">
-        <div className="flex gap-4">
-          <div 
-            className="border rounded p-2 text-[16px] bg-[#f4ad97] hover:bg-[#ed6f48] transition-colors duration-300 ease-in-out box-border cursor-pointer"
-            onClick={(() => {
-              setChinListVisible(false)
-              setEngListVisible(true)
-            })}>
-                English songlist
+        <div className="flex gap-4 items-center justify-between">
+          <div className="flex gap-4">
+            <div
+              className="border rounded p-2 text-[16px] bg-[#f4ad97] hover:bg-[#ed6f48] transition-colors duration-300 ease-in-out box-border cursor-pointer"
+              onClick={(() => {
+                setChinListVisible(false)
+                setEngListVisible(true)
+              })}>
+                  English songlist
+              </div>
+            <div
+              className="border rounded p-2 text-[16px] bg-[#f4ad97] hover:bg-[#ed6f48] transition-colors duration-300 ease-in-out box-border cursor-pointer"
+              onClick={(() => {
+                setChinListVisible(true)
+                setEngListVisible(false)
+              })}>
+                Chinese songlist</div>
+          </div>
+          {session && (
+            <div className="flex items-center gap-2 text-sm">
+              <span>Logged in as {session.user.email}</span>
+              <button
+                onClick={() => signOut()}
+                className="bg-gray-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-gray-600"
+              >
+                Log out
+              </button>
             </div>
-          <div
-            className="border rounded p-2 text-[16px] bg-[#f4ad97] hover:bg-[#ed6f48] transition-colors duration-300 ease-in-out box-border cursor-pointer"
-            onClick={(() => {
-              setChinListVisible(true)
-              setEngListVisible(false)
-            })}>
-              Chinese songlist</div>
+          )}
         </div>
 
     <div className="flex flex-col gap-4">
