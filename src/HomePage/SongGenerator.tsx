@@ -76,6 +76,9 @@ export const SongGenerator: React.FC = () => {
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
+  const getSetTotalSeconds = (set: Song[]) =>
+    set.reduce((acc, s) => acc + converterToSeconds(s.duration), 0) + songsGap * (set.length - 1) + (host ? hostGap : 0);
+
   const shuffleArray = <T,>(arr: T[]): T[] => {
     return [...arr].sort(() => Math.random() - 0.5);
   };
@@ -99,7 +102,8 @@ export const SongGenerator: React.FC = () => {
         console.error("Fetch error:", error);
         return;
       }
-      setChinese((data as Song[]).filter((filt) => filt.actuality === 'active'));
+      const tagged = (data as Song[]).map(song => ({ ...song, chin: 'chin' }));
+      setChinese(tagged.filter((filt) => filt.actuality === 'active'));
     };
     fetchEng();
     fetchChin();
@@ -240,10 +244,16 @@ export const SongGenerator: React.FC = () => {
 
   const copyToClipboard = () => {
     const text = sets
-      .map((set, i) => `Set ${i + 1}:\n${set.map(song => `${song.name.includes('-')
-        ? song.name.slice(song.name.lastIndexOf('-') + 2)
-        : song.name
-      } - ${song.duration}`).join("\n")}`)
+      .map((set, i) => {
+        const songLines = set.map(song => {
+          const displayName = song.name.includes('-')
+            ? song.name.slice(song.name.lastIndexOf('-') + 2)
+            : song.name;
+          const marker = song.chin === 'chin' ? ' 🇨🇳' : '';
+          return `${displayName} - ${song.duration}${marker}`;
+        }).join("\n");
+        return `Set ${i + 1} (${timerGenerator(getSetTotalSeconds(set))}):\n${songLines}`;
+      })
       .join("\n\n");
     navigator.clipboard.writeText(text);
     alert("Copied!");
@@ -373,7 +383,7 @@ export const SongGenerator: React.FC = () => {
 
     <div className="space-y-4">
       {sets.map((set, setIndex) => {
-        const totalSeconds = set.reduce((acc, s) => acc + converterToSeconds(s.duration), 0) + songsGap * (set.length - 1) + (host ? hostGap : 0);
+        const totalSeconds = getSetTotalSeconds(set);
         return (
           <div key={setIndex} className="border bg-white p-4 rounded relative">
             <h3 className="font-bold mb-2">Set {setIndex + 1}</h3>
@@ -381,10 +391,10 @@ export const SongGenerator: React.FC = () => {
 
             <ul className="mb-2 space-y-1">
               {set.map((song, songIndex) => (
-                <li key={song.id} className="flex justify-between items-center gap-2">
+                <li key={song.id} className="flex items-center gap-2">
                   <input
                     data-song-editor={`${setIndex}-${songIndex}`}
-                    className="border p-1 rounded w-2/3"
+                    className="border p-1 rounded flex-1"
                     value={
                       editingSong && editingSong.setIndex === setIndex && editingSong.songIndex === songIndex
                         ? search
@@ -403,8 +413,11 @@ export const SongGenerator: React.FC = () => {
                       setSearch(e.target.value);
                     }}
                   />
-                  <span className="border p-1 rounded w-20 text-center bg-slate-100 text-slate-700">
+                  <span className="border p-1 rounded w-20 text-center bg-slate-100 text-slate-700 shrink-0">
                     {song.duration}
+                  </span>
+                  <span className="w-6 text-center shrink-0">
+                    {song.chin === 'chin' ? '🇨🇳' : ''}
                   </span>
                 </li>
               ))}
@@ -443,7 +456,7 @@ export const SongGenerator: React.FC = () => {
                         setDropdownOptions([]);
                       }}
                     >
-                      {s.name} - {s.duration}
+                      {s.name} - {s.duration} {s.chin === 'chin' ? '🇨🇳' : ''}
                     </li>
                   ))}
                 </ul>
