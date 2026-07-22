@@ -51,7 +51,7 @@ export const LoginForm = ({ title = "Sign in to continue", onSuccess }: LoginFor
       <button
         type="submit"
         disabled={submitting}
-        className="bg-blue-500 text-white px-3 py-1 rounded cursor-pointer hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="bg-blue-500 text-white px-3 py-1 rounded cursor-pointer hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-400"
       >
         {submitting ? "Signing in..." : "Sign in"}
       </button>

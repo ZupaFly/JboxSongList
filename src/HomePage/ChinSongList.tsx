@@ -4,15 +4,7 @@ import { SongCard } from "./SongCard";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../auth/useAuth";
 import { LoginForm } from "../auth/LoginForm";
-
-interface Song {
-  id?: string;
-  name: string;
-  duration: string;
-  extra?: string;
-  actuality?: string;
-  chin?: string;
-}
+import type { Song } from "../types/song";
 
 export const ChinSongList = () => {
   const formRef = useRef<HTMLDivElement>(null);
@@ -94,6 +86,20 @@ const changeChinSong = (song: Song) => {
     });
   }
 
+  const deleteChinSong = (id: string) => {
+    supabase
+      .from("chinSongs")
+      .delete()
+      .eq("id", id)
+      .then(({ error }) => {
+        if (error) {
+          setError(error.message);
+          return;
+        }
+        setChinSongs(prev => prev.filter(s => s.id !== id));
+      });
+  }
+
   const isFormValid =
     addChin.name.trim() !== '' &&
     /^\d{2}:\d{2}$/.test(addChin.duration);
@@ -101,6 +107,7 @@ const changeChinSong = (song: Song) => {
   const addSong = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addChin) return;
+    setSongLoading(true);
 
     const newSong: Song = {
       name: addChin.name,
@@ -138,19 +145,20 @@ const changeChinSong = (song: Song) => {
   if (error) return <p style={{ color: "red" }}>Помилка: {error}</p>;
 
   return (
-    <div className="bg-pink-100 border-none rounded-2xl">
+    <div className="bg-slate-100 border-none rounded-2xl">
       <div className="flex justify-between pl-4 pt-4 pr-4 mb-2 pb-0">
         <h2 onClick={scrollToForm}
-          className="bg-[#f4ad97]  rounded-2xl p-1 flex items-center justify-center cursor-pointer transform-color duration-300 ease-in hover:bg-[#ed6f48]">Create PDF</h2>
-        <h2 
+          className="bg-amber-400 text-white rounded-2xl p-1 flex items-center justify-center cursor-pointer transform-color duration-300 ease-in hover:bg-amber-500">Create PDF</h2>
+        <h2
           onClick={scrollToForm}
-          className="bg-[#f4ad97]  rounded-2xl p-1 flex items-center justify-center cursor-pointer transform-color duration-300 ease-in hover:bg-[#ed6f48]">Add new song</h2>
+          className="bg-amber-400 text-white rounded-2xl p-1 flex items-center justify-center cursor-pointer transform-color duration-300 ease-in hover:bg-amber-500">Add new song</h2>
       </div>
       <ul>
         <SongCard
-          songs={chinSongs} 
-          changeSong={changeChinSong} 
+          songs={chinSongs}
+          changeSong={changeChinSong}
           setChangeSong={setChangeChin}
+          deleteSong={deleteChinSong}
           chin={'chin'}
         />
       </ul>
@@ -240,7 +248,7 @@ const changeChinSong = (song: Song) => {
         <div className="flex justify-center mt-4">
           <button
             type="submit"
-            disabled={!isFormValid || songLoading}
+            disabled={!isFormValid || songLoading || success}
             className={`text-white w-1/2 px-3 py-1 rounded mb-2
               ${success 
                 ? 'cursor-pointer bg-green-500'

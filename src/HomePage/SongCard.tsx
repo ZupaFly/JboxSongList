@@ -5,15 +5,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useAuth } from "../auth/useAuth";
 import { LoginForm } from "../auth/LoginForm";
-
-interface Song {
-  id?: string;
-  name: string;
-  duration: string;
-  extra?: string;
-  actuality?: string;
-  chin?: string;
-}
+import { ACTUALITY_OPTIONS, EXTRA_OPTIONS, type Song } from "../types/song";
 
 interface SongCardProps {
   songs: Song[];
@@ -25,13 +17,15 @@ interface SongCardProps {
     extra: string;
     actuality: string;
   }>>;
+  deleteSong: (id: string) => void;
   chin?: string;
 }
 
-export const SongCard: FC<SongCardProps> = ({ songs, changeSong, setChangeSong, chin }) => {
+export const SongCard: FC<SongCardProps> = ({ songs, changeSong, setChangeSong, deleteSong, chin }) => {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [exportFile, setExportFile] = useState<boolean>(true);
   const [filterSong, setFilterSong] = useState("active");
+  const [searchTerm, setSearchTerm] = useState("");
   const { session } = useAuth();
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -39,8 +33,9 @@ export const SongCard: FC<SongCardProps> = ({ songs, changeSong, setChangeSong, 
 
   const focusInput = () => inputRef.current?.focus();
 
-const songsFiltered = songs.filter((song) => 
-  filterSong === 'all' ? song : song.actuality === filterSong);
+const songsFiltered = songs
+  .filter((song) => filterSong === 'all' ? true : song.actuality === filterSong)
+  .filter((song) => song.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
 const handleInputChange = (field: keyof Song, value: string) => {
   if (!selectedSong) return;
@@ -61,6 +56,13 @@ const handleInputChange = (field: keyof Song, value: string) => {
   const handleSave = () => {
     if (!selectedSong) return;
     changeSong(selectedSong);
+    setSelectedSong(null);
+  };
+
+  const handleDelete = () => {
+    if (!selectedSong?.id) return;
+    if (!window.confirm(`Delete "${selectedSong.name}"? This cannot be undone.`)) return;
+    deleteSong(selectedSong.id);
     setSelectedSong(null);
   };
 
@@ -145,7 +147,7 @@ const exportToPDF = async () => {
         ? 'Chinese'
         : 'English'} Song List:`}
       </h2>
-      <div className="p-2 flex flex-col items-center">
+      <div className="p-2 flex flex-col items-center gap-2">
         <label htmlFor="song" className="block mb-1 font-semibold">
           Choose songlist actuality:
         </label>
@@ -153,17 +155,24 @@ const exportToPDF = async () => {
           id="song"
           value={filterSong}
           onChange={(e) => setFilterSong(e.target.value)}
-          className="border border-gray-300 rounded-lg p-2 w-64"
+          className="border border-slate-300 rounded-lg p-2 w-64"
         >
           <option value="active">Active songlist</option>
           <option value="passive">Passive songlist</option>
           <option value="all">Full songlist</option>
         </select>
+        <input
+          type="text"
+          placeholder="Search song..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border border-slate-300 rounded-lg p-2 w-64"
+        />
       </div>
     </div>
       {songsFiltered.map((song, index) => (
         <button
-          key={index}
+          key={song.id ?? index}
           onClick={() => {
             setSelectedSong(song);
             setChangeSong({
@@ -174,7 +183,7 @@ const exportToPDF = async () => {
               actuality: song.actuality || ''
             });
           }}
-          className="border-none rounded-[10px] pb-1 mb-1 text-left px-2 cursor-pointer w-full z-50 bg-[#eda58f]"
+          className="border-none rounded-[10px] pb-1 mb-1 text-left px-2 cursor-pointer w-full z-50 bg-slate-100 hover:bg-slate-200 text-slate-900"
         >
           {index + 1}. {song.name}
         </button>
@@ -187,7 +196,7 @@ const exportToPDF = async () => {
         <>
           <h2 className="text-xl font-bold">Update song information</h2>
 
-          {(['name', 'duration', 'extra'] as (keyof Song)[]).map(field => (
+          {(['name', 'duration'] as const).map(field => (
             <div key={field} className="flex items-center gap-2">
               <label className="w-24 capitalize">{field}:</label>
               <input
@@ -207,33 +216,55 @@ const exportToPDF = async () => {
           ))}
 
           <div className="flex items-center gap-2">
+            <label className="w-24 capitalize">extra:</label>
+            <select
+              value={selectedSong.extra ?? ''}
+              onChange={(e) => handleInputChange('extra', e.target.value)}
+              className="border p-1 rounded flex-1"
+            >
+              {EXTRA_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
             <label className="w-24 capitalize">actuality:</label>
             <select
               value={selectedSong.actuality ?? 'active'}
               onChange={(e) => handleInputChange('actuality', e.target.value)}
               className="border p-1 rounded flex-1"
             >
-              <option value="active">Active</option>
-              <option value="passive">Passive</option>
+              {ACTUALITY_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
 
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-between gap-2 mt-4">
             <button
               type="button"
-              onClick={() => setSelectedSong(null)}
-              className="px-4 py-2 bg-gray-300 rounded cursor-pointer"
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded cursor-pointer"
             >
-              Cancel
+              Delete song
             </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              style={{ backgroundColor: '#3B82F6'}}
-              className="px-4 py-2 text-white rounded cursor-pointer"
-            >
-              Save changes
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedSong(null)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded cursor-pointer"
+              >
+                Save changes
+              </button>
+            </div>
           </div>
         </>
       ) : (

@@ -1,25 +1,14 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { useEffect, useState } from "react";
 import { ChinSongList } from "./ChinSongList";
 import { EngSongList } from "./EngSongList";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../auth/useAuth";
-
-interface Song {
-  id: string;
-  name: string;
-  duration: string;
-  extra?: string;
-  popularity?: boolean;
-  actuality?: "active" | "inactive";
-}
-
-interface SetSong extends Song {}
+import type { Song } from "../types/song";
 
 export const SongGenerator: React.FC = () => {
   const [eng, setEng] = useState<Song[]>([]);
   const [chinese, setChinese] = useState<Song[]>([]);
-  const [sets, setSets] = useState<SetSong[][]>([]);
+  const [sets, setSets] = useState<Song[][]>([]);
   const [songGap, setSongGap] = useState<number>(10)
 
   const [setLength, setSetLength] = useState<number[]>(Array(3).fill(20));
@@ -116,81 +105,77 @@ export const SongGenerator: React.FC = () => {
     fetchChin();
   }, []);
 
-  const generateSets = () => { 
+  const TARGET_TOLERANCE_SECONDS = 60;
+
+  const generateSets = () => {
     if (!eng.length || !chinese.length) return;
     const extras = selectedExtras();
-    const resultSets: SetSong[][] = [];
+    const resultSets: Song[][] = [];
 
     const usedEng = new Set<string>();
     const usedChin = new Set<string>();
 
     for (let setIndex = 0; setIndex < numSets; setIndex++) {
-      let count = setLength[setIndex] * 60 - (host ? hostGap : 0);
+      const targetSeconds = setLength[setIndex] * 60 - (host ? hostGap : 0);
+      const maxSeconds = targetSeconds + TARGET_TOLERANCE_SECONDS;
+      const minSeconds = targetSeconds - TARGET_TOLERANCE_SECONDS;
 
-      const result: SetSong[] = [];
+      const result: Song[] = [];
+      let total = 0;
 
       let filteredEng = eng.filter(
-        s => s.actuality !== "inactive" 
-          && (!s.extra || s.extra === "holidays" && extras.includes(s.extra))
+        s => s.actuality !== "inactive"
+          && (!s.extra || extras.includes(s.extra))
           && !usedEng.has(s.name)
       );
       let filteredChin = chinese.filter(
-        s => s.actuality !== "inactive" 
-          && (!s.extra || s.extra === "holidays" || extras.includes(s.extra))
+        s => s.actuality !== "inactive"
+          && (!s.extra || extras.includes(s.extra))
           && !usedChin.has(s.name)
       );
 
-      
       filteredEng = shuffleArray(filteredEng);
       filteredChin = shuffleArray(filteredChin);
-      
-      console.log(filteredChin);
-      console.log(filteredEng);
-      while (count > 0 && (filteredEng.length || filteredChin.length)) {
+
+      // Gaps go BETWEEN songs, not after the last one, so `total` always
+      // matches the real elapsed set length shown to the user.
+      const fits = (s: Song) => total + (result.length > 0 ? songsGap : 0) + converterToSeconds(s.duration) <= maxSeconds;
+      const take = (s: Song, fromArray: Song[], isEng: boolean) => {
+        total += (result.length > 0 ? songsGap : 0) + converterToSeconds(s.duration);
+        result.push(s);
+        fromArray.splice(fromArray.indexOf(s), 1);
+        (isEng ? usedEng : usedChin).add(s.name);
+      };
+
+      while (filteredEng.length || filteredChin.length) {
         const firstArray = firstSongEng ? filteredEng : filteredChin;
         const secondArray = firstSongEng ? filteredChin : filteredEng;
 
-        const selectedFirst = firstArray.find(s => converterToSeconds(s.duration) <= count);
+        const selectedFirst = firstArray.find(fits);
         if (!selectedFirst) break;
+        take(selectedFirst, firstArray, firstSongEng);
 
-        result.push(selectedFirst);
-        count -= converterToSeconds(selectedFirst.duration) + songsGap;
-
-        if (firstSongEng) {
-          usedEng.add(selectedFirst.name);
-        } else {
-          usedChin.add(selectedFirst.name);
-        }
-
-        firstArray.splice(firstArray.indexOf(selectedFirst), 1);
-
-        const selectedSecond = secondArray.find(s => converterToSeconds(s.duration) <= count);
+        const selectedSecond = secondArray.find(fits);
         if (!selectedSecond) break;
+        take(selectedSecond, secondArray, !firstSongEng);
+      }
 
-        result.push(selectedSecond);
-        count -= converterToSeconds(selectedSecond.duration) + songsGap;
+      // Alternation may run out of candidates before reaching the target
+      // (e.g. no more English songs). Fill the remaining gap from whichever
+      // pool still fits, breaking strict alternation if needed.
+      while (total < minSeconds) {
+        const nextEng = filteredEng.find(fits);
+        const nextChin = filteredChin.find(fits);
+        if (!nextEng && !nextChin) break;
 
-        if (firstSongEng) {
-          usedChin.add(selectedSecond.name);
-        } else {
-          usedEng.add(selectedSecond.name);
-        }
-
-        secondArray.splice(secondArray.indexOf(selectedSecond), 1);
+        if (nextEng) take(nextEng, filteredEng, true);
+        else if (nextChin) take(nextChin, filteredChin, false);
       }
 
       resultSets.push(result);
     }
 
     setSets(resultSets);
-  };
-
-  const updateSong = (setIndex: number, songIndex: number, field: "name" | "duration", value: string) => {
-    setSets(prev => {
-      const copy = [...prev];
-      copy[setIndex][songIndex] = { ...copy[setIndex][songIndex], [field]: value };
-      return copy;
-    });
   };
 
   const removeSong = (setIndex: number) => {
@@ -227,6 +212,32 @@ export const SongGenerator: React.FC = () => {
     if (filtered.length === 0) setSelectedSong(null);
   }, [search, eng, chinese]);
 
+  useEffect(() => {
+    if (currentSet === null) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      const zone = target.closest("[data-set-search-zone]");
+      const zoneIndex = zone ? Number(zone.getAttribute("data-set-search-zone")) : null;
+      const isInsideSearchZone = zoneIndex === currentSet;
+
+      const editor = target.closest("[data-song-editor]");
+      const isCurrentEditor = !!editingSong
+        && editor?.getAttribute("data-song-editor") === `${editingSong.setIndex}-${editingSong.songIndex}`;
+
+      if (!isInsideSearchZone && !isCurrentEditor) {
+        setCurrentSet(null);
+        setEditingSong(null);
+        setSearch("");
+        setDropdownOptions([]);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [currentSet, editingSong]);
+
   const copyToClipboard = () => {
     const text = sets
       .map((set, i) => `Set ${i + 1}:\n${set.map(song => `${song.name.includes('-')
@@ -239,12 +250,12 @@ export const SongGenerator: React.FC = () => {
   };
 
   return (
-    <div className="p-4 font-sans space-y-4 bg-[#bed9ff] flex flex-col md:flex-row gap-4">
+    <div className="p-4 font-sans space-y-4 bg-slate-100 flex flex-col md:flex-row gap-4">
       <div className="flex-1">
         <div className="flex gap-4 items-center justify-between">
           <div className="flex gap-4">
             <div
-              className="border rounded p-2 text-[16px] bg-[#f4ad97] hover:bg-[#ed6f48] transition-colors duration-300 ease-in-out box-border cursor-pointer"
+              className="border rounded p-2 text-[16px] text-white bg-amber-400 hover:bg-amber-500 transition-colors duration-300 ease-in-out box-border cursor-pointer"
               onClick={(() => {
                 setChinListVisible(false)
                 setEngListVisible(true)
@@ -252,7 +263,7 @@ export const SongGenerator: React.FC = () => {
                   English songlist
               </div>
             <div
-              className="border rounded p-2 text-[16px] bg-[#f4ad97] hover:bg-[#ed6f48] transition-colors duration-300 ease-in-out box-border cursor-pointer"
+              className="border rounded p-2 text-[16px] text-white bg-amber-400 hover:bg-amber-500 transition-colors duration-300 ease-in-out box-border cursor-pointer"
               onClick={(() => {
                 setChinListVisible(true)
                 setEngListVisible(false)
@@ -264,7 +275,7 @@ export const SongGenerator: React.FC = () => {
               <span>Logged in as {session.user.email}</span>
               <button
                 onClick={() => signOut()}
-                className="bg-gray-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-gray-600"
+                className="bg-slate-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-slate-600"
               >
                 Log out
               </button>
@@ -352,7 +363,7 @@ export const SongGenerator: React.FC = () => {
         disabled={isLoading}
         className={`px-4 py-2 rounded transition-colors duration-300 ease-in cursor-pointer
           ${isLoading 
-            ? "bg-gray-400 cursor-not-allowed" 
+            ? "bg-slate-400 cursor-not-allowed"
             : "bg-blue-500 text-white hover:bg-blue-700"}`}
       >
           {isLoading ? "Loading..." : "Generate List"}
@@ -364,7 +375,7 @@ export const SongGenerator: React.FC = () => {
       {sets.map((set, setIndex) => {
         const totalSeconds = set.reduce((acc, s) => acc + converterToSeconds(s.duration), 0) + songsGap * (set.length - 1) + (host ? hostGap : 0);
         return (
-          <div key={setIndex} className="border p-4 rounded relative">
+          <div key={setIndex} className="border bg-white p-4 rounded relative">
             <h3 className="font-bold mb-2">Set {setIndex + 1}</h3>
             <p className="mb-2">Total Set length: {timerGenerator(totalSeconds)}</p>
 
@@ -372,6 +383,7 @@ export const SongGenerator: React.FC = () => {
               {set.map((song, songIndex) => (
                 <li key={song.id} className="flex justify-between items-center gap-2">
                   <input
+                    data-song-editor={`${setIndex}-${songIndex}`}
                     className="border p-1 rounded w-2/3"
                     value={
                       editingSong && editingSong.setIndex === setIndex && editingSong.songIndex === songIndex
@@ -391,18 +403,14 @@ export const SongGenerator: React.FC = () => {
                       setSearch(e.target.value);
                     }}
                   />
-                  <input
-                    className="border p-1 rounded w-20 text-center"
-                    value={song.duration}
-                    onChange={e => updateSong(setIndex, songIndex, "duration", e.target.value)}
-                    pattern="\d{2}:\d{2}"
-                    placeholder="mm:ss"
-                  />
+                  <span className="border p-1 rounded w-20 text-center bg-slate-100 text-slate-700">
+                    {song.duration}
+                  </span>
                 </li>
               ))}
             </ul>
 
-            <div className="mb-2 relative">
+            <div data-set-search-zone={setIndex} className="mb-2 relative">
               <input
                 type="text"
                 placeholder="Search song..."
@@ -418,7 +426,7 @@ export const SongGenerator: React.FC = () => {
                   {dropdownOptions.map(s => (
                     <li
                       key={s.id}
-                      className="p-1 cursor-pointer hover:bg-gray-200"
+                      className="p-1 cursor-pointer hover:bg-slate-200"
                       onClick={() => {
                         if (editingSong) {
                           setSets(prev => {
