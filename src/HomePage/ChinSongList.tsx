@@ -44,7 +44,7 @@ useEffect(() => {
   const fetchChinSongs = async () => {
     try {
       const { data, error } = await supabase.from("chinSongs").select("*");
-      if (error) throw new Error("Помилка завантаження стандартного списку");
+      if (error) throw new Error(error.message);
 
       setChinSongs([...(data as Song[])].sort((a, b) => a.name.localeCompare(b.name)));
     } catch (err:any) {
@@ -141,7 +141,7 @@ const changeChinSong = (song: Song) => {
     }
   }
 
-  if (loading) return <p>Завантаження...</p>;
+  if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Помилка: {error}</p>;
 
   return (

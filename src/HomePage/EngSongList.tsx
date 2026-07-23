@@ -44,7 +44,7 @@ useEffect(() => {
   const fetchEngSongs = async () => {
     try {
       const { data, error } = await supabase.from("engSongs").select("*");
-      if (error) throw new Error("Помилка завантаження стандартного списку");
+      if (error) throw new Error(error.message);
 
       setEngSongs([...(data as Song[])].sort((a, b) => a.name.localeCompare(b.name)));
     } catch (err:any) {
