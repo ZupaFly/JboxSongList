@@ -262,27 +262,28 @@ export const SongGenerator: React.FC = () => {
   return (
     <div className="p-4 font-sans space-y-4 bg-slate-100 flex flex-col md:flex-row gap-4">
       <div className="flex-1">
-        <div className="flex gap-4 items-center justify-between">
-          <div className="flex gap-4">
+        <div className="flex gap-4 items-center justify-between mb-2">
+          <div className="flex gap-4 justify-between">
             <div
-              className="border rounded p-2 text-[16px] text-white bg-amber-400 hover:bg-amber-500 transition-colors duration-300 ease-in-out box-border cursor-pointer"
+              className="border rounded p-1 text-[12px] text-white bg-amber-400 hover:bg-amber-500 transition-colors duration-300 ease-in-out box-border cursor-pointer"
               onClick={(() => {
                 setChinListVisible(false)
                 setEngListVisible(true)
               })}>
                   English songlist
-              </div>
+            </div>
             <div
-              className="border rounded p-2 text-[16px] text-white bg-amber-400 hover:bg-amber-500 transition-colors duration-300 ease-in-out box-border cursor-pointer"
+              className="border rounded p-1 text-[12px] text-white bg-amber-400 hover:bg-amber-500 transition-colors duration-300 ease-in-out box-border cursor-pointer"
               onClick={(() => {
                 setChinListVisible(true)
                 setEngListVisible(false)
               })}>
-                Chinese songlist</div>
+                Chinese songlist
+            </div>
           </div>
           {session && (
-            <div className="flex items-center gap-2 text-sm">
-              <span>Logged in as {session.user.email}</span>
+            <div className="flex items-center gap-4 text-sm justify-between">
+              <span className="flex items-center">Logged in as admin</span>
               <button
                 onClick={() => signOut()}
                 className="bg-slate-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-slate-600"
@@ -327,7 +328,7 @@ export const SongGenerator: React.FC = () => {
           />
         </div>
       </div>
-      <div className="flex flex-row flex-wrap gap-4">
+      <div className="flex flex-row flex-wrap gap-4 mb-2">
         {setLength.map((length, index) => (
           <div
             key={index}
@@ -346,7 +347,7 @@ export const SongGenerator: React.FC = () => {
       </div>
     </div>
 
-    <div className="flex flex-wrap gap-4">
+    <div className="flex flex-wrap gap-4 mb-2">
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={holidays} onChange={() => setHolidays(!holidays)} /> Weekend/Holidays
       </label>
@@ -358,7 +359,7 @@ export const SongGenerator: React.FC = () => {
       </label>
     </div>
 
-    <div className="flex flex-wrap gap-4">
+    <div className="flex flex-wrap gap-4 mb-2">
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={host} onChange={() => setHost(!host)} /> Have host?
       </label>
@@ -367,7 +368,7 @@ export const SongGenerator: React.FC = () => {
       </label>
     </div>
 
-    <div className="flex gap-2  mb-4">
+    <div className="flex gap-2 justify-around  mb-4">
       <button
         onClick={generateSets}
         disabled={isLoading}
@@ -391,10 +392,11 @@ export const SongGenerator: React.FC = () => {
 
             <ul className="mb-2 space-y-1">
               {set.map((song, songIndex) => (
-                <li key={song.id} className="flex items-center gap-2">
+                <li key={song.id} className="flex items-center gap-1">
                   <input
+                    title={song.name}
                     data-song-editor={`${setIndex}-${songIndex}`}
-                    className="border p-1 rounded flex-1"
+                    className="border p-1 rounded truncate w-full"
                     value={
                       editingSong && editingSong.setIndex === setIndex && editingSong.songIndex === songIndex
                         ? search
@@ -413,7 +415,7 @@ export const SongGenerator: React.FC = () => {
                       setSearch(e.target.value);
                     }}
                   />
-                  <span className="border p-1 rounded w-20 text-center bg-slate-100 text-slate-700 shrink-0">
+                  <span className="border p-1 rounded text-center bg-slate-100 text-slate-700 shrink-0">
                     {song.duration}
                   </span>
                   <span className="w-6 text-center shrink-0">
